@@ -6,18 +6,34 @@
 //
 
 import UIKit
+import Turbo
+import WebKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-
+    private lazy var navigationController = UINavigationController()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let _ = (scene as? UIWindowScene) else { return }
+        window!.rootViewController = navigationController
+        visit(url: URL(string: "https://6626875ded9e.ngrok.io")!)
     }
+    
+    private func visit(url: URL) {
+        let viewController = VisitableViewController(url: url)
+        navigationController.pushViewController(viewController, animated: true)
+        session.visit(viewController)
+    }
+    
+    private lazy var session: Session = {
+        let configuration = WKWebViewConfiguration()
+        configuration.applicationNameForUserAgent = "TemplateiOS"
+        
+        let session = Session(webViewConfiguration: configuration)
+        session.delegate = self
+        return session
+    }()
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
@@ -46,7 +62,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to save data, release shared resources, and store enough scene-specific state information
         // to restore the scene back to its current state.
     }
+}
 
-
+extension SceneDelegate: SessionDelegate {
+    func session(_ session: Session, didProposeVisit proposal: VisitProposal) {
+        visit(url: proposal.url)
+    }
+    
+    func session(_ session: Session, didFailRequestForVisitable visitable: Visitable, error: Error) {
+        print("didFailRequestForVisitable: \(error)")
+    }
 }
 
